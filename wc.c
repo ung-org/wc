@@ -51,7 +51,7 @@ void flagprint(uintmax_t n, uintmax_t w, uintmax_t c, char *f, int flags)
 	}
 
 	if (flags & CHARS || flags & BYTES) {
-		printf("%lu", c);
+		printf("%ju", c);
 	}
 
 	if (f != NULL) {
@@ -152,6 +152,7 @@ int main(int argc, char *argv[])
 
 		case 'm':
 			flags |= CHARS;
+			flags &= ~BYTES;
 			break;
 
 		case 'l':
