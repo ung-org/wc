@@ -20,6 +20,7 @@
 #define _XOPEN_SOURCE 700
 #include <errno.h>
 #include <inttypes.h>
+#include <locale.h>
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
@@ -141,6 +142,8 @@ int main(int argc, char *argv[])
 	int ret = 0;
 	int flags = 0;
 	int total = 0;
+
+	setlocale(LC_ALL, "");
  
 	int c;
 	while ((c = getopt(argc, argv, "cmlw")) != -1) {
