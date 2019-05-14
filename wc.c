@@ -84,9 +84,11 @@ int is_space(wint_t c, int flags)
 
 int is_newline(wint_t c, int flags)
 {
+	#ifdef __STDC_MB_MIGHT_NEQ_WC__
 	if (flags & CHARS) {
 		return c == L'\n';
 	}
+	#endif
 	return c == '\n';
 }
 
