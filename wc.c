@@ -82,15 +82,17 @@ int is_space(wint_t c, int flags)
 	return isspace(c);
 }
 
+#ifdef __STDC_MB_MIGHT_NEQ_WC__
 int is_newline(wint_t c, int flags)
 {
-	#ifdef __STDC_MB_MIGHT_NEQ_WC__
 	if (flags & CHARS) {
 		return c == L'\n';
 	}
-	#endif
 	return c == '\n';
 }
+#else
+#define is_newline(_c, _flags) ((_c) == '\n')
+#endif
 
 int wc(char *path, int flags)
 {
@@ -179,7 +181,7 @@ int main(int argc, char *argv[])
 
 	do {
 		ret |= wc(argv[optind++], flags);
-	} while (argv[optind]);
+	} while (optind < argc);
  
 	if (total) {
 		flagprint(total_n, total_w, total_c, "total", flags);
