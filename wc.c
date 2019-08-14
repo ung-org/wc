@@ -56,7 +56,7 @@ void flagprint(uintmax_t n, uintmax_t w, uintmax_t c, char *f, int flags)
 	}
 
 	if (f != NULL) {
-		printf("%s%s", flags & CHARS || flags & BYTES ? " " : "", f);
+		printf(" %s", f);
 	}
 
 	printf("\n");
