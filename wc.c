@@ -18,12 +18,12 @@
  */
 
 #define _XOPEN_SOURCE 700
+#include <ctype.h>
 #include <errno.h>
 #include <inttypes.h>
 #include <locale.h>
 #include <stdio.h>
 #include <string.h>
-#include <ctype.h>
 #include <wchar.h>
 #include <wctype.h>
 #include <unistd.h>
