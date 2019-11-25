@@ -37,7 +37,7 @@ static uintmax_t total_n = 0;
 static uintmax_t total_w = 0;
 static uintmax_t total_c = 0;
 
-void flagprint(uintmax_t n, uintmax_t w, uintmax_t c, char *f, int flags)
+static void flagprint(uintmax_t n, uintmax_t w, uintmax_t c, char *f, int flags)
 {
 	if (flags == 0) {
 		flags = LINES | WORDS | CHARS;
@@ -62,39 +62,22 @@ void flagprint(uintmax_t n, uintmax_t w, uintmax_t c, char *f, int flags)
 	printf("\n");
 }
 
-wint_t get_char_or_byte(FILE *f, int flags)
+static wint_t get_byte(FILE *f)
 {
-	if (flags & CHARS) {
-		return fgetwc(f);
-	}
 	int c = fgetc(f);
-	if (c == EOF) {
-		return WEOF;
-	}
-	return c;
+	return c == EOF ? WEOF : c;
 }
 
-int is_space(wint_t c, int flags)
+static int is_space_(wint_t c)
 {
-	if (flags & CHARS) {
-		return iswspace(c);
-	}
-	return isspace(c);
+	return isspace((int)c);
 }
 
-#ifdef __STDC_MB_MIGHT_NEQ_WC__
-int is_newline(wint_t c, int flags)
-{
-	if (flags & CHARS) {
-		return c == L'\n';
-	}
-	return c == '\n';
-}
-#else
-#define is_newline(_c, _flags) ((_c) == '\n')
-#endif
+static wint_t (*get_char_or_byte)(FILE *) = get_byte;
+static int (*is_space)(wint_t) = is_space_;
+static wint_t newline = '\n';
 
-int wc(char *path, int flags)
+static int wc(char *path, int flags)
 {
 	uintmax_t newlines = 0;
 	uintmax_t words = 0;
@@ -113,11 +96,11 @@ int wc(char *path, int flags)
 	}
 
 	wint_t c;
-	while ((c = get_char_or_byte(f, flags)) != WEOF) {
+	while ((c = get_char_or_byte(f)) != WEOF) {
 		charbytes++;
 
-		if (is_space(c, flags)) {
-			newlines += is_newline(c, flags);
+		if (is_space(c)) {
+			newlines += (c == newline);
 			words += !wasword;
 			wasword = 1;
 		} else {
@@ -173,6 +156,12 @@ int main(int argc, char *argv[])
 
 	if (argc - optind > 1) {
 		total = 1;
+	}
+
+	if (flags & CHARS) {
+		is_space = iswspace;
+		get_char_or_byte = fgetwc;
+		newline = L'\n';
 	}
 
 	do {
