@@ -89,8 +89,7 @@ static int wc(char *path, int flags)
 	if (path && strcmp(path, "-") != 0) {
 		f = fopen(path, "r");
 		if (f == NULL) {
-			fprintf(stderr, "wc:couldn't open %s:%s\n", path,
-				strerror(errno));
+			fprintf(stderr, "wc: %s: %s\n", path, strerror(errno));
 			return 1;
 		}
 	}
