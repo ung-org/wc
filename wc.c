@@ -117,12 +117,8 @@ int wc(char *path, int flags)
 		charbytes++;
 
 		if (is_space(c, flags)) {
-			if (is_newline(c, flags)) {
-				newlines++;
-			}
-			if (wasword == 0) {
-				words++;
-			}
+			newlines += is_newline(c, flags);
+			words += !wasword;
 			wasword = 1;
 		} else {
 			wasword = 0;
