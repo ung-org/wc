@@ -36,6 +36,8 @@
 static uintmax_t total_n = 0;
 static uintmax_t total_w = 0;
 static uintmax_t total_c = 0;
+static wint_t wc_eof = EOF;
+static wint_t wc_newline = '\n';
 
 static void flagprint(uintmax_t n, uintmax_t w, uintmax_t c, char *f, int flags)
 {
@@ -62,20 +64,18 @@ static void flagprint(uintmax_t n, uintmax_t w, uintmax_t c, char *f, int flags)
 	printf("\n");
 }
 
-static wint_t get_byte(FILE *f)
+static wint_t wc_get_(FILE *f)
 {
-	int c = fgetc(f);
-	return c == EOF ? WEOF : c;
+	return fgetc(f);
 }
 
-static int is_space_(wint_t c)
+static int wc_isspace_(wint_t c)
 {
 	return isspace((int)c);
 }
 
-static wint_t (*get_char_or_byte)(FILE *) = get_byte;
-static int (*is_space)(wint_t) = is_space_;
-static wint_t newline = '\n';
+static wint_t (*wc_get)(FILE *) = wc_get_;
+static int (*wc_isspace)(wint_t) = wc_isspace_;
 
 static int wc(char *path, int flags)
 {
@@ -95,11 +95,11 @@ static int wc(char *path, int flags)
 	}
 
 	wint_t c;
-	while ((c = get_char_or_byte(f)) != WEOF) {
+	while ((c = wc_get(f)) != wc_eof) {
 		charbytes++;
 
-		if (is_space(c)) {
-			newlines += (c == newline);
+		if (wc_isspace(c)) {
+			newlines += (c == wc_newline);
 			words += !wasword;
 			wasword = 1;
 		} else {
@@ -158,9 +158,10 @@ int main(int argc, char *argv[])
 	}
 
 	if (flags & CHARS) {
-		is_space = iswspace;
-		get_char_or_byte = fgetwc;
-		newline = L'\n';
+		wc_eof = WEOF;
+		wc_get = fgetwc;
+		wc_newline = L'\n';
+		wc_isspace = iswspace;
 	}
 
 	do {
