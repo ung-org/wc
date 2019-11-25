@@ -39,6 +39,9 @@ static uintmax_t total_c = 0;
 static wint_t wc_eof = EOF;
 static wint_t wc_newline = '\n';
 
+static wint_t (*wc_get)(FILE *);
+static int (*wc_isspace)(wint_t);
+
 static void flagprint(uintmax_t n, uintmax_t w, uintmax_t c, char *f, int flags)
 {
 	if (flags == 0) {
@@ -74,15 +77,12 @@ static int wc_isspace_(wint_t c)
 	return isspace((int)c);
 }
 
-static wint_t (*wc_get)(FILE *) = wc_get_;
-static int (*wc_isspace)(wint_t) = wc_isspace_;
-
 static int wc(char *path, int flags)
 {
 	uintmax_t newlines = 0;
 	uintmax_t words = 0;
 	uintmax_t charbytes = 0;
-	int wasword = 0;
+	int wasspace = 1;
 
 	FILE *f = stdin;
 
@@ -100,10 +100,10 @@ static int wc(char *path, int flags)
 
 		if (wc_isspace(c)) {
 			newlines += (c == wc_newline);
-			words += !wasword;
-			wasword = 1;
+			words += !wasspace;
+			wasspace = 1;
 		} else {
-			wasword = 0;
+			wasspace = 0;
 		}
 	}
 
@@ -162,6 +162,9 @@ int main(int argc, char *argv[])
 		wc_get = fgetwc;
 		wc_newline = L'\n';
 		wc_isspace = iswspace;
+	} else {
+		wc_get = wc_get_;
+		wc_isspace = wc_isspace_;
 	}
 
 	do {
