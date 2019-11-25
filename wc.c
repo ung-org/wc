@@ -52,12 +52,16 @@ static void wc_print(uintmax_t n, uintmax_t w, uintmax_t c, char *f, int flags)
 		flags = WC_LINES | WC_WORDS | WC_CHARS;
 	}
 
+	flags &= (WC_LINES | WC_WORDS | WC_CHARS);
+
 	if (flags & WC_LINES) {
-		printf("%ju%s", n, flags ^ WC_LINES ? " " : "");
+		flags ^= WC_LINES;
+		printf("%ju%s", n, flags ? " " : "");
 	}
 
 	if (flags & WC_WORDS) {
-		printf("%ju%s", w, flags ^ (WC_LINES | WC_WORDS) ? " " : "");
+		flags ^= WC_WORDS;
+		printf("%ju%s", w, flags ? " " : "");
 	}
 
 	if (flags & WC_CHARS) {
