@@ -28,35 +28,39 @@
 #include <wctype.h>
 #include <unistd.h>
 
-#define BYTES (1 << 0)
-#define CHARS (1 << 1)
-#define LINES (1 << 2)
-#define WORDS (1 << 3)
+enum {
+	WC_CHARS = 1 << 0,
+	WC_LINES = 1 << 1,
+	WC_WORDS = 1 << 2,
+};
 
-static uintmax_t total_n = 0;
-static uintmax_t total_w = 0;
-static uintmax_t total_c = 0;
+static wint_t wc_get_(FILE *f);
+static int wc_isspace_(wint_t c);
+
+static uintmax_t wc_total_n = 0;
+static uintmax_t wc_total_w = 0;
+static uintmax_t wc_total_c = 0;
+
 static wint_t wc_eof = EOF;
 static wint_t wc_newline = '\n';
+static wint_t (*wc_get)(FILE *) = wc_get_;
+static int (*wc_isspace)(wint_t) = wc_isspace_;
 
-static wint_t (*wc_get)(FILE *);
-static int (*wc_isspace)(wint_t);
-
-static void flagprint(uintmax_t n, uintmax_t w, uintmax_t c, char *f, int flags)
+static void wc_print(uintmax_t n, uintmax_t w, uintmax_t c, char *f, int flags)
 {
 	if (flags == 0) {
-		flags = LINES | WORDS | CHARS;
+		flags = WC_LINES | WC_WORDS | WC_CHARS;
 	}
 
-	if (flags & LINES) {
-		printf("%ju%s", n, flags ^ LINES ? " " : "");
+	if (flags & WC_LINES) {
+		printf("%ju%s", n, flags ^ WC_LINES ? " " : "");
 	}
 
-	if (flags & WORDS) {
-		printf("%ju%s", w, flags ^ (LINES | WORDS) ? " " : "");
+	if (flags & WC_WORDS) {
+		printf("%ju%s", w, flags ^ (WC_LINES | WC_WORDS) ? " " : "");
 	}
 
-	if (flags & CHARS || flags & BYTES) {
+	if (flags & WC_CHARS) {
 		printf("%ju", c);
 	}
 
@@ -111,11 +115,11 @@ static int wc(char *path, int flags)
 		fclose(f);
 	}
 
-	total_n += newlines;
-	total_w += words;
-	total_c += charbytes;
+	wc_total_n += newlines;
+	wc_total_w += words;
+	wc_total_c += charbytes;
 
-	flagprint (newlines, words, charbytes, path, flags);
+	wc_print(newlines, words, charbytes, path, flags);
 	return 0;
 }
 
@@ -130,22 +134,28 @@ int main(int argc, char *argv[])
 	int c;
 	while ((c = getopt(argc, argv, "cmlw")) != -1) {
 		switch (c) {
-		case 'c':
-			flags |= BYTES;
-			flags &= ~CHARS;
+		case 'c':	/* count bytes */
+			flags |= WC_CHARS;
+			wc_eof = EOF;
+			wc_get = wc_get_;
+			wc_newline = '\n';
+			wc_isspace = wc_isspace_;
 			break;
 
-		case 'm':
-			flags |= CHARS;
-			flags &= ~BYTES;
+		case 'm':	/* count characters */
+			flags |= WC_CHARS;
+			wc_eof = WEOF;
+			wc_get = fgetwc;
+			wc_newline = L'\n';
+			wc_isspace = iswspace;
 			break;
 
-		case 'l':
-			flags |= LINES;
+		case 'l':	/* count lines */
+			flags |= WC_LINES;
 			break;
 
-		case 'w':
-			flags |= WORDS;
+		case 'w':	/* count words */
+			flags |= WC_WORDS;
 			break;
 
 		default:
@@ -157,22 +167,12 @@ int main(int argc, char *argv[])
 		total = 1;
 	}
 
-	if (flags & CHARS) {
-		wc_eof = WEOF;
-		wc_get = fgetwc;
-		wc_newline = L'\n';
-		wc_isspace = iswspace;
-	} else {
-		wc_get = wc_get_;
-		wc_isspace = wc_isspace_;
-	}
-
 	do {
 		ret |= wc(argv[optind++], flags);
 	} while (optind < argc);
  
 	if (total) {
-		flagprint(total_n, total_w, total_c, "total", flags);
+		wc_print(wc_total_n, wc_total_w, wc_total_c, "total", flags);
 	}
 
 	return ret;
